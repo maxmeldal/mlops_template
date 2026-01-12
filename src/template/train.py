@@ -1,31 +1,27 @@
-import matplotlib.pyplot as plt
+import logging
+import os
+
+import hydra
 import torch
-import typer
+import wandb
+from dotenv import load_dotenv
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from torchvision.utils import make_grid
+
 from template.data import corrupt_mnist
 from template.model import MyAwesomeModel
-from sklearn.metrics import  accuracy_score, f1_score, precision_score, recall_score
-import os
-import hydra
-import logging
-from torchvision.utils import make_grid
-from dotenv import load_dotenv
-load_dotenv()
-import os
-api_key = os.getenv("WANDB_API_KEY")
-import wandb
-wandb.login()
 
+load_dotenv()
+api_key = os.getenv("WANDB_API_KEY")
+wandb.login()
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
+
 @hydra.main(version_base=None, config_path="../../configs", config_name="config")
 def train(cfg) -> None:
-    run = wandb.init(
-        entity="maxmeldal",
-        project="mlops",
-          config=cfg.hyperparameters
-        )
+    run = wandb.init(entity="maxmeldal", project="mlops", config=cfg.hyperparameters)
     """Train a model on MNIST."""
     logging.info("Training day and night")
     lr = cfg.hyperparameters.learning_rate
@@ -63,8 +59,8 @@ def train(cfg) -> None:
 
             if i % 100 == 0:
                 logging.info(f"Epoch {epoch}, iter {i}, loss: {loss.item()}")
-                
-                 # add a grid of the input images
+
+                # add a grid of the input images
                 grid = make_grid(img[:25].detach().cpu(), nrow=5, normalize=True)  # [3, H, W] or [1, H, W]
                 wandb.log({"image_grid": wandb.Image(grid)})
 
@@ -96,11 +92,7 @@ def train(cfg) -> None:
     artifact.add_file("models/model.pth")
     run.log_artifact(artifact)
 
-    run.link_artifact(
-    artifact=artifact,
-    target_path="model-registry/corrupt_mnist_models",
-    aliases=["latest"]
-)
+    run.link_artifact(artifact=artifact, target_path="model-registry/corrupt_mnist_models", aliases=["latest"])
 
 
 if __name__ == "__main__":

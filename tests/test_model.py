@@ -12,4 +12,4 @@ def test_model_output_shape():
     sample_img, _ = train_set[0]
     sample_img = sample_img.unsqueeze(0).to(DEVICE)  # Add batch dimension
     output = model(sample_img)
-    assert output.shape == (1, 10) 
+    assert output.shape == (1, 10)
