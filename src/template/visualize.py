@@ -19,15 +19,18 @@ def visualize(model_checkpoint: str, figure_name: str = "embeddings.png") -> Non
     _, test_set = corrupt_mnist()
     test_dataloader = torch.utils.data.DataLoader(test_set, batch_size=32)
 
-    embeddings, targets = [], []
+    embeddings_list: list[torch.Tensor] = []
+    targets_list: list[torch.Tensor] = []
     with torch.inference_mode():
         for img, target in test_dataloader:
             img, target = img.to(DEVICE), target.to(DEVICE)
             predictions = model(img)
-            embeddings.append(predictions)
-            targets.append(target)
-        embeddings = torch.cat(embeddings).to("cpu").numpy()
-        targets = torch.cat(targets).to("cpu").numpy()
+            embeddings_list.append(predictions)
+            targets_list.append(target)
+        embeddings_tensor = torch.cat(embeddings_list).to("cpu")
+        targets_tensor = torch.cat(targets_list).to("cpu")
+        embeddings = embeddings_tensor.numpy()
+        targets = targets_tensor.numpy()
 
     if embeddings.shape[1] > 500:  # Reduce dimensionality for large embeddings
         pca = PCA(n_components=100)

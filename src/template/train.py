@@ -37,10 +37,11 @@ def train(cfg) -> None:
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
-    statistics = {"train_loss": [], "train_accuracy": []}
+    statistics: dict[str, list[float]] = {"train_loss": [], "train_accuracy": []}
     for epoch in range(epochs):
         model.train()
-        preds, targets = [], []
+        preds_list: list[torch.Tensor] = []
+        targets_list: list[torch.Tensor] = []
         for i, (img, target) in enumerate(train_dataloader):
             img, target = img.to(DEVICE), target.to(DEVICE)
             optimizer.zero_grad()
@@ -54,8 +55,8 @@ def train(cfg) -> None:
             statistics["train_accuracy"].append(accuracy)
             wandb.log({"train_loss": loss.item(), "train_accuracy": accuracy})
 
-            preds.append(y_pred.detach().cpu())
-            targets.append(target.detach().cpu())
+            preds_list.append(y_pred.detach().cpu())
+            targets_list.append(target.detach().cpu())
 
             if i % 100 == 0:
                 logging.info(f"Epoch {epoch}, iter {i}, loss: {loss.item()}")
@@ -66,10 +67,10 @@ def train(cfg) -> None:
 
                 # add a plot of histogram of the gradients
                 grads = torch.cat([p.grad.flatten() for p in model.parameters() if p.grad is not None], 0).cpu()
-                wandb.log({"gradients": wandb.Histogram(grads)})
+                wandb.log({"gradients": wandb.Histogram(grads.numpy().tolist())})
 
-        preds = torch.cat(preds, 0)
-        targets = torch.cat(targets, 0)
+        preds: torch.Tensor = torch.cat(preds_list, 0)
+        targets: torch.Tensor = torch.cat(targets_list, 0)
 
     logging.info("Training complete")
 
