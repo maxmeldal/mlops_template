@@ -1,0 +1,77 @@
+_content:
+    value:
+        batch_size: "32"
+        learning_rate: "0.001"
+        num_epochs: "5"
+_flags_cache:
+    value:
+        struct: true
+_metadata:
+    value:
+        element_type: typing.Any
+        flags_root: false
+        key: hyperparameters
+        key_type: typing.Any
+        object_type: builtins.dict
+        optional: true
+        ref_type: typing.Any
+_parent:
+    value: '{''hyperparameters'': {''learning_rate'': 0.001, ''batch_size'': 32, ''num_epochs'': 5}}'
+_wandb:
+    value:
+        cli_version: 0.23.1
+        e:
+            h0611qap106sjfb1oscgqun4ymhcrj55:
+                apple:
+                    ecpuCores: 4
+                    gpuCores: 8
+                    memoryGb: 16
+                    name: Apple M2
+                    pcpuCores: 4
+                    ramTotalBytes: "17179869184"
+                    swapTotalBytes: "12884901888"
+                codePath: src/template/train.py
+                codePathLocal: src/template/train.py
+                cpu_count: 8
+                cpu_count_logical: 8
+                disk:
+                    /:
+                        total: "494384795648"
+                        used: "437651378176"
+                email: maxmeldal@gmail.com
+                executable: /Users/maxmeldal/Documents/DTU/2025-2026/Januar/mlops_template/.venv/bin/python3
+                git:
+                    commit: 4496120f6fd07e60256ddf56ec6f82d06ca1b331
+                    remote: https://github.com/maxmeldal/mlops_template.git
+                host: Maxs-MacBook-Air.local
+                memory:
+                    total: "17179869184"
+                os: macOS-15.6.1-arm64-arm-64bit
+                program: /Users/maxmeldal/Documents/DTU/2025-2026/Januar/mlops_template/src/template/train.py
+                python: CPython 3.12.12
+                root: /Users/maxmeldal/Documents/DTU/2025-2026/Januar/mlops_template
+                startedAt: "2026-01-08T10:43:34.489497Z"
+                writerId: h0611qap106sjfb1oscgqun4ymhcrj55
+        m: []
+        python_version: 3.12.12
+        t:
+            "1":
+                - 1
+                - 5
+                - 41
+                - 50
+                - 53
+                - 105
+            "2":
+                - 1
+                - 5
+                - 41
+                - 50
+                - 53
+                - 105
+            "3":
+                - 16
+            "4": 3.12.12
+            "5": 0.23.1
+            "12": 0.23.1
+            "13": darwin-arm64

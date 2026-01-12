@@ -1,18 +1,28 @@
+import os
 import matplotlib.pyplot as plt
 import torch
 import typer
 from template.data import corrupt_mnist
 from template.model import MyAwesomeModel
+import wandb
+api = wandb.Api()
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
-def evaluate(model_checkpoint: str) -> None:
+def evaluate(alias: str) -> None:
     """Evaluate a trained model."""
     print("Evaluating like my life depended on it")
-    print(model_checkpoint)
+    print(alias)
 
     model = MyAwesomeModel().to(DEVICE)
-    model.load_state_dict(torch.load(model_checkpoint))
+    artifact = api.artifact(
+        f"maxmeldal/model-registry/corrupt_mnist_models:{alias}",
+        type="model"
+    )
+    artifact_dir = artifact.download()
+
+    model_path = os.path.join(artifact_dir, "model.pth")
+    model.load_state_dict(torch.load(model_path, map_location=DEVICE))
 
     _, test_set = corrupt_mnist()
     test_dataloader = torch.utils.data.DataLoader(test_set, batch_size=32)

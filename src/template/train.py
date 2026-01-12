@@ -3,13 +3,35 @@ import torch
 import typer
 from template.data import corrupt_mnist
 from template.model import MyAwesomeModel
+from sklearn.metrics import  accuracy_score, f1_score, precision_score, recall_score
+import os
+import hydra
+import logging
+from torchvision.utils import make_grid
+from dotenv import load_dotenv
+load_dotenv()
+import os
+api_key = os.getenv("WANDB_API_KEY")
+import wandb
+wandb.login()
+
+
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
-def train(lr: float = 1e-3, batch_size: int = 32, epochs: int = 10) -> None:
+@hydra.main(version_base=None, config_path="../../configs", config_name="config")
+def train(cfg) -> None:
+    run = wandb.init(
+        entity="maxmeldal",
+        project="mlops",
+          config=cfg.hyperparameters
+        )
     """Train a model on MNIST."""
-    print("Training day and night")
-    print(f"{lr=}, {batch_size=}, {epochs=}")
+    logging.info("Training day and night")
+    lr = cfg.hyperparameters.learning_rate
+    batch_size = cfg.hyperparameters.batch_size
+    epochs = cfg.hyperparameters.num_epochs
+    logging.info(f"{lr=}, {batch_size=}, {epochs=}")
 
     model = MyAwesomeModel().to(DEVICE)
     train_set, _ = corrupt_mnist()
@@ -22,6 +44,7 @@ def train(lr: float = 1e-3, batch_size: int = 32, epochs: int = 10) -> None:
     statistics = {"train_loss": [], "train_accuracy": []}
     for epoch in range(epochs):
         model.train()
+        preds, targets = [], []
         for i, (img, target) in enumerate(train_dataloader):
             img, target = img.to(DEVICE), target.to(DEVICE)
             optimizer.zero_grad()
@@ -33,19 +56,52 @@ def train(lr: float = 1e-3, batch_size: int = 32, epochs: int = 10) -> None:
 
             accuracy = (y_pred.argmax(dim=1) == target).float().mean().item()
             statistics["train_accuracy"].append(accuracy)
+            wandb.log({"train_loss": loss.item(), "train_accuracy": accuracy})
+
+            preds.append(y_pred.detach().cpu())
+            targets.append(target.detach().cpu())
 
             if i % 100 == 0:
-                print(f"Epoch {epoch}, iter {i}, loss: {loss.item()}")
+                logging.info(f"Epoch {epoch}, iter {i}, loss: {loss.item()}")
+                
+                 # add a grid of the input images
+                grid = make_grid(img[:25].detach().cpu(), nrow=5, normalize=True)  # [3, H, W] or [1, H, W]
+                wandb.log({"image_grid": wandb.Image(grid)})
 
-    print("Training complete")
+                # add a plot of histogram of the gradients
+                grads = torch.cat([p.grad.flatten() for p in model.parameters() if p.grad is not None], 0).cpu()
+                wandb.log({"gradients": wandb.Histogram(grads)})
+
+        preds = torch.cat(preds, 0)
+        targets = torch.cat(targets, 0)
+
+    logging.info("Training complete")
+
+    # make sure directories exist
+    os.makedirs("models", exist_ok=True)
+    os.makedirs("reports/figures", exist_ok=True)
+
+    final_accuracy = accuracy_score(targets, preds.argmax(dim=1))
+    final_precision = precision_score(targets, preds.argmax(dim=1), average="weighted")
+    final_recall = recall_score(targets, preds.argmax(dim=1), average="weighted")
+    final_f1 = f1_score(targets, preds.argmax(dim=1), average="weighted")
+
     torch.save(model.state_dict(), "models/model.pth")
-    fig, axs = plt.subplots(1, 2, figsize=(15, 5))
-    axs[0].plot(statistics["train_loss"])
-    axs[0].set_title("Train loss")
-    axs[1].plot(statistics["train_accuracy"])
-    axs[1].set_title("Train accuracy")
-    fig.savefig("reports/figures/training_statistics.png")
+    artifact = wandb.Artifact(
+        name="corrupt_mnist_model",
+        type="model",
+        description="A model trained to classify corrupt MNIST images",
+        metadata={"accuracy": final_accuracy, "precision": final_precision, "recall": final_recall, "f1": final_f1},
+    )
+    artifact.add_file("models/model.pth")
+    run.log_artifact(artifact)
+
+    run.link_artifact(
+    artifact=artifact,
+    target_path="model-registry/corrupt_mnist_models",
+    aliases=["latest"]
+)
 
 
 if __name__ == "__main__":
-    typer.run(train)
+    train()
