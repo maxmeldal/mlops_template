@@ -180,4 +180,5 @@ wandb.env
 
 *.pth
 wandb/
+artifacts/
 outputs/
